@@ -15,7 +15,7 @@ genai.configure(api_key=api_key)
 
 # 使用 Gemini 1.5 Flash 模型 (速度快且免費額度高)
 model = genai.GenerativeModel(
-    'gemini-1.5-flash',
+    'gemini-1.5-flash-latest',
     generation_config={"response_mime_type": "application/json"}
 )
 

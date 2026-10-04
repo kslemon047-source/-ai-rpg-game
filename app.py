@@ -14,8 +14,15 @@ api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY"))
 genai.configure(api_key=api_key)
 
 # 使用 Gemini 1.5 Flash 模型 (速度快且免費額度高)
-model = genai.GenerativeModel('gemini-pro')
+# 自動尋找帳號權限內可用的文字生成模型
+valid_model = None
+for m in genai.list_models():
+    if 'generateContent' in m.supported_generation_methods:
+        valid_model = m.name
+        break
 
+# 使用找到的模型建立實體
+model = genai.GenerativeModel(valid_model)
 
 SYSTEM_PROMPT = """
 你是一個嚴格遵守規則的奇幻文字冒險遊戲地下城主。

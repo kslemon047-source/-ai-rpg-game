@@ -8,17 +8,16 @@ import google.generativeai as genai
 from gtts import gTTS
 
 # ==========================================
-# 1. API 與系統設定 (Gemini 版本)
+# 1. API 與系統設定 (Gemini 免費版)
 # ==========================================
 api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY"))
 genai.configure(api_key=api_key)
 
-# 使用 Gemini 1.5 Flash 模型 (速度快且免費額度高)
-model = genai.GenerativeModel('gemini-1.5-flash')
-
-
-# 使用找到的模型建立實體
-model = genai.GenerativeModel(valid_model)
+# 使用穩定且標準的免費模型
+model = genai.GenerativeModel(
+    'gemini-1.5-flash',
+    generation_config={"response_mime_type": "application/json"}
+)
 
 SYSTEM_PROMPT = """
 你是一個嚴格遵守規則的奇幻文字冒險遊戲地下城主。
@@ -68,12 +67,11 @@ def equip_weapon(item_idx):
     player["inventory"].pop(item_idx)
 
 # ==========================================
-# 3. 遊戲核心推演邏輯 (免費版)
+# 3. 遊戲核心推演邏輯
 # ==========================================
 def generate_next_turn(user_action=None, roll_result_text=""):
     player = st.session_state.player_state
     
-    # 組合給 AI 的提示詞
     state_context = f"[當前狀態 - Lv.{player['level']} (HP:{player['hp']})]"
     if user_action:
         user_msg = f"{state_context}\n玩家選擇：{user_action}。\n{roll_result_text}\n(請務必確保輸出為合法 JSON)"
@@ -84,15 +82,12 @@ def generate_next_turn(user_action=None, roll_result_text=""):
 
     with st.spinner('地下城主正在推演劇情...'):
         try:
-            # 1. 呼叫 Gemini 文字模型
             response = model.generate_content(prompt)
             ai_reply = json.loads(response.text)
             
-            # 結算 HP 與 EXP
             player["hp"] = min(player["max_hp"], player["hp"] + ai_reply.get("hp_change", 0))
             player["exp"] += ai_reply.get("exp_gain", 0)
             
-            # 結算獲得物品
             for item in ai_reply.get("inventory_add", []):
                 player["inventory"].append(item)
                 
@@ -101,16 +96,13 @@ def generate_next_turn(user_action=None, roll_result_text=""):
             if player["exp"] >= 100:
                 st.session_state.pending_level_up = True
 
-            # 2. 生成免費圖片 (Pollinations.ai)
             img_prompt = ai_reply.get("image_prompt", "")
             if img_prompt:
-                # 把文字轉成 URL 格式，直接呼叫免金鑰 API
                 safe_prompt = urllib.parse.quote(img_prompt + " anime visual novel style highly detailed")
                 st.session_state.current_image_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true"
             else:
                 st.session_state.current_image_url = None
 
-            # 3. 生成免費語音 (gTTS)
             spoken_text = ai_reply.get("spoken_text", "")
             if spoken_text:
                 tts = gTTS(text=spoken_text, lang='zh-tw')

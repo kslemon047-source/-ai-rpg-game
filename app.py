@@ -14,10 +14,18 @@ api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY"))
 genai.configure(api_key=api_key)
 
 # 使用穩定且標準的免費模型
+# 自動偵測並使用帳號可用的模型，避免 404 錯誤
+try:
+    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    chosen_model = available_models[0] if available_models else 'gemini-1.5-flash'
+except Exception:
+    chosen_model = 'gemini-1.5-flash'
+
 model = genai.GenerativeModel(
-    'gemini-1.5-flash',
+    model_name=chosen_model,
     generation_config={"response_mime_type": "application/json"}
 )
+
 
 SYSTEM_PROMPT = """
 你是一個嚴格遵守規則的奇幻文字冒險遊戲地下城主。

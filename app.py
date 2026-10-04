@@ -14,7 +14,8 @@ api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY"))
 genai.configure(api_key=api_key)
 
 # 使用 Gemini 1.5 Flash 模型 (速度快且免費額度高)
-model = genai.GenerativeModel('gemini-3.8-flash')
+model = genai.GenerativeModel('gemini-1.5-flash')
+
 
 # 使用找到的模型建立實體
 model = genai.GenerativeModel(valid_model)
